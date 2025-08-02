@@ -6,6 +6,9 @@ import {
   aiReviews,
   reviewComments,
   chatMessages,
+  learningPatterns,
+  codeContext,
+  reviewInsights,
   type User,
   type UpsertUser,
   type Repository,
@@ -20,6 +23,12 @@ import {
   type InsertReviewComment,
   type ChatMessage,
   type InsertChatMessage,
+  type LearningPattern,
+  type InsertLearningPattern,
+  type CodeContext,
+  type InsertCodeContext,
+  type ReviewInsight,
+  type InsertReviewInsight,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -55,6 +64,19 @@ export interface IStorage {
   // Chat message operations
   getChatMessages(pullRequestId: string): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  
+  // Learning pattern operations (CodeRabbit-style)
+  getLearningPatterns(repositoryId: string): Promise<LearningPattern[]>;
+  createLearningPattern(pattern: InsertLearningPattern): Promise<LearningPattern>;
+  updateLearningPattern(id: string, occurrences: number, confidence: number): Promise<void>;
+  
+  // Code context operations
+  getCodeContext(pullRequestId: string): Promise<CodeContext[]>;
+  createCodeContext(context: InsertCodeContext): Promise<CodeContext>;
+  
+  // Review insights operations
+  getReviewInsights(pullRequestId: string): Promise<ReviewInsight[]>;
+  createReviewInsight(insight: InsertReviewInsight): Promise<ReviewInsight>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -171,6 +193,50 @@ export class DatabaseStorage implements IStorage {
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
     const [newMessage] = await db.insert(chatMessages).values(message).returning();
     return newMessage;
+  }
+
+  // Learning pattern operations (CodeRabbit-style)
+  async getLearningPatterns(repositoryId: string): Promise<LearningPattern[]> {
+    return await db.select().from(learningPatterns)
+      .where(eq(learningPatterns.repositoryId, repositoryId))
+      .orderBy(desc(learningPatterns.confidence));
+  }
+
+  async createLearningPattern(pattern: InsertLearningPattern): Promise<LearningPattern> {
+    const [newPattern] = await db.insert(learningPatterns).values(pattern).returning();
+    return newPattern;
+  }
+
+  async updateLearningPattern(id: string, occurrences: number, confidence: number): Promise<void> {
+    await db.update(learningPatterns)
+      .set({ 
+        occurrences, 
+        confidence, 
+        lastSeen: new Date() 
+      })
+      .where(eq(learningPatterns.id, id));
+  }
+
+  // Code context operations
+  async getCodeContext(pullRequestId: string): Promise<CodeContext[]> {
+    return await db.select().from(codeContext)
+      .where(eq(codeContext.pullRequestId, pullRequestId));
+  }
+
+  async createCodeContext(context: InsertCodeContext): Promise<CodeContext> {
+    const [newContext] = await db.insert(codeContext).values(context).returning();
+    return newContext;
+  }
+
+  // Review insights operations
+  async getReviewInsights(pullRequestId: string): Promise<ReviewInsight[]> {
+    return await db.select().from(reviewInsights)
+      .where(eq(reviewInsights.pullRequestId, pullRequestId));
+  }
+
+  async createReviewInsight(insight: InsertReviewInsight): Promise<ReviewInsight> {
+    const [newInsight] = await db.insert(reviewInsights).values(insight).returning();
+    return newInsight;
   }
 }
 

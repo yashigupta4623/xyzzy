@@ -159,10 +159,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         comments.push(savedComment);
       }
 
+      // Save CodeRabbit-style insights
+      await storage.createReviewInsight({
+        pullRequestId: req.params.id,
+        category: analysis.insights.category,
+        riskLevel: analysis.insights.riskLevel,
+        changeType: analysis.insights.changeType,
+        impactScore: analysis.insights.impactScore,
+        reviewTime: analysis.insights.reviewTime,
+        educationalValue: analysis.insights.educationalValue,
+      });
+
+      // Save context analysis for each file
+      for (const context of analysis.contextAnalysis) {
+        const file = files.find(f => f.filename === context.filename);
+        if (file) {
+          await storage.createCodeContext({
+            pullRequestId: req.params.id,
+            fileId: file.id,
+            dependencies: context.dependencies,
+            complexity: context.complexity,
+            maintainabilityIndex: context.maintainabilityIndex,
+            techDebt: context.techDebtScore,
+          });
+        }
+      }
+
+      // Save learning patterns
+      const repository = await storage.getRepository(pullRequest.repositoryId);
+      if (repository) {
+        for (const pattern of analysis.learningPatterns) {
+          await storage.createLearningPattern({
+            repositoryId: repository.id,
+            patternType: pattern.patternType,
+            pattern: pattern.pattern,
+            confidence: pattern.confidence,
+          });
+        }
+      }
+
       // Update PR review status
       await storage.updatePullRequestStatus(req.params.id, pullRequest.status, analysis.overallRating);
 
-      res.json({ ...review, comments });
+      res.json({ 
+        ...review, 
+        comments,
+        insights: analysis.insights,
+        contextAnalysis: analysis.contextAnalysis,
+        learningPatterns: analysis.learningPatterns
+      });
     } catch (error) {
       console.error("Error creating review:", error);
       res.status(500).json({ message: "Failed to create review" });
@@ -239,6 +284,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching PR files:", error);
       res.status(500).json({ message: "Failed to fetch PR files" });
+    }
+  });
+
+  // CodeRabbit-style feature routes
+  app.get('/api/pull-requests/:id/insights', async (req, res) => {
+    try {
+      const insights = await storage.getReviewInsights(req.params.id);
+      res.json(insights);
+    } catch (error) {
+      console.error("Error fetching review insights:", error);
+      res.status(500).json({ message: "Failed to fetch review insights" });
+    }
+  });
+
+  app.get('/api/pull-requests/:id/context', async (req, res) => {
+    try {
+      const context = await storage.getCodeContext(req.params.id);
+      res.json(context);
+    } catch (error) {
+      console.error("Error fetching code context:", error);
+      res.status(500).json({ message: "Failed to fetch code context" });
+    }
+  });
+
+  app.get('/api/repositories/:id/patterns', async (req, res) => {
+    try {
+      const patterns = await storage.getLearningPatterns(req.params.id);
+      res.json(patterns);
+    } catch (error) {
+      console.error("Error fetching learning patterns:", error);
+      res.status(500).json({ message: "Failed to fetch learning patterns" });
     }
   });
 

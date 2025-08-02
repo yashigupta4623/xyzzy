@@ -8,7 +8,9 @@ import {
   Github,
   Star,
   CheckCircle,
-  Users
+  Users,
+  Brain,
+  Target
 } from "lucide-react";
 
 export default function Landing() {
@@ -23,7 +25,7 @@ export default function Landing() {
               <Bot className="text-white text-lg relative z-10" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-semibold text-gh-text tracking-tight">BugOtter</span>
+              <span className="text-xl font-semibold text-gh-text tracking-tight">CodeRabbit Clone</span>
               <span className="text-xs text-purple-400 font-medium tracking-wider">AI REVIEW</span>
             </div>
           </div>
@@ -49,13 +51,13 @@ export default function Landing() {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-            AI-Powered Code Review
+            Advanced AI Code Review
           </h1>
           
           <p className="text-xl text-gh-text-secondary mb-8 max-w-3xl mx-auto leading-relaxed">
-            Transform your development workflow with intelligent code analysis. 
-            BugOtter provides comprehensive security audits, performance insights, 
-            and quality assessments for every pull request.
+            Experience CodeRabbit-level intelligence with deep contextual understanding. 
+            Get senior developer insights, educational feedback, and adaptive learning 
+            that grows with your team's coding patterns.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -84,10 +86,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 text-gh-text">
-              Intelligent Code Review Features
+              CodeRabbit-Style Intelligence
             </h2>
             <p className="text-xl text-gh-text-secondary max-w-2xl mx-auto">
-              Leverage cutting-edge AI to catch issues before they reach production
+              Advanced contextual understanding with senior developer-level insights and adaptive learning
             </p>
           </div>
           
@@ -155,11 +157,35 @@ export default function Landing() {
             <Card className="bg-gh-dark border-gh-border hover:border-purple-500/50 transition-all duration-300">
               <CardContent className="p-6">
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg flex items-center justify-center mb-4">
+                  <Brain className="text-white w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-semibold text-gh-text mb-2">Adaptive Learning</h3>
+                <p className="text-gh-text-secondary">
+                  Learns your team's coding patterns and adapts to your architectural preferences
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gh-dark border-gh-border hover:border-purple-500/50 transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg flex items-center justify-center mb-4">
+                  <Target className="text-white w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-semibold text-gh-text mb-2">Context Analysis</h3>
+                <p className="text-gh-text-secondary">
+                  Multi-file understanding with dependency mapping and complexity analysis
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gh-dark border-gh-border hover:border-purple-500/50 transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg flex items-center justify-center mb-4">
                   <Users className="text-white w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-semibold text-gh-text mb-2">Team Collaboration</h3>
+                <h3 className="text-xl font-semibold text-gh-text mb-2">Educational Insights</h3>
                 <p className="text-gh-text-secondary">
-                  Streamlined workflow integration with your existing development process
+                  Senior developer-level explanations that help teams learn and improve
                 </p>
               </CardContent>
             </Card>

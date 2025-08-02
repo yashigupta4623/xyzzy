@@ -1,8 +1,8 @@
-# BugOtter - AI-Powered Code Review Platform
+# CodeRabbit Clone - Advanced AI Code Review Platform
 
 ## Overview
 
-BugOtter is a full-stack AI-powered code review platform that provides intelligent analysis of GitHub pull requests. The application connects to GitHub repositories, imports pull requests, and uses OpenAI's API to generate comprehensive code reviews with AI-powered insights. Users can interact with an AI chat system to discuss code changes and receive automated feedback on code quality, security, and performance.
+A comprehensive AI-powered code review platform modeled after CodeRabbit, providing intelligent, context-aware analysis of GitHub pull requests. The application uses Google's Gemini AI to deliver senior developer-level insights, real-time code analysis, and interactive chat functionality. Features include multi-file context understanding, security vulnerability detection, performance optimization suggestions, and adaptive learning from team coding patterns.
 
 ## User Preferences
 
@@ -64,15 +64,31 @@ Preferred communication style: Simple, everyday language.
 
 ### AI Integration
 
-**Gemini AI Integration**: Uses Google's Gemini API for generating code reviews and chat responses. The system analyzes pull request diffs, file changes, and user queries to provide intelligent feedback.
+**CodeRabbit-Style AI Integration**: Uses Google's Gemini API to deliver advanced, context-aware code analysis similar to CodeRabbit. Provides senior developer-level insights with educational explanations and deep contextual understanding.
 
-**Review Analysis**: AI reviews include:
-- Overall rating (approved/changes_requested/commented)
-- Code quality scores and metrics
-- Security and performance issue detection
-- Line-specific comments with suggestions
+**Advanced Review Analysis**: AI reviews include:
+- Overall rating with detailed reasoning
+- Code quality scores and maintainability metrics
+- Security vulnerability detection with educational context
+- Performance optimization suggestions
+- Multi-file dependency analysis
+- Risk assessment and impact scoring
+- Educational value scoring for learning opportunities
 
-**Chat System**: Interactive AI chat allows users to ask questions about code changes and receive contextual responses based on the pull request content.
+**Learning & Adaptation**: The system learns from repository patterns and adapts to team coding styles:
+- Coding style pattern recognition
+- Architecture preference learning
+- Testing pattern analysis
+- Security practice adaptation
+
+**Context-Aware Features**:
+- Multi-file context understanding
+- Code dependency mapping
+- Complexity analysis (cyclomatic complexity)
+- Tech debt assessment
+- Maintainability index scoring
+
+**Interactive AI Chat**: Educational chat system providing detailed explanations, best practices guidance, and contextual code understanding.
 
 ## External Dependencies
 

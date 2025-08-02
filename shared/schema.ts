@@ -119,6 +119,45 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Learning patterns table (CodeRabbit-style adaptive learning)
+export const learningPatterns = pgTable("learning_patterns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repositoryId: varchar("repository_id").notNull(),
+  patternType: varchar("pattern_type").notNull(), // coding_style, architecture, testing, security
+  pattern: jsonb("pattern").notNull(), // Stores the learned pattern data
+  confidence: real("confidence").default(0.5),
+  occurrences: integer("occurrences").default(1),
+  lastSeen: timestamp("last_seen").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Code context analysis table (CodeRabbit-style multi-file understanding)
+export const codeContext = pgTable("code_context", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pullRequestId: varchar("pull_request_id").notNull(),
+  fileId: varchar("file_id").notNull(),
+  dependencies: text("dependencies").array().default([]), // Related files/modules
+  exports: jsonb("exports"), // What this file exports
+  imports: jsonb("imports"), // What this file imports
+  complexity: real("complexity"), // Cyclomatic complexity
+  maintainabilityIndex: real("maintainability_index"),
+  techDebt: real("tech_debt_score"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Advanced review insights table (CodeRabbit-style detailed analysis)
+export const reviewInsights = pgTable("review_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pullRequestId: varchar("pull_request_id").notNull(),
+  category: varchar("category").notNull(), // new_features, bug_fixes, tests, chores, refactor
+  riskLevel: varchar("risk_level").default("low"), // low, medium, high, critical
+  changeType: varchar("change_type").notNull(), // feature, bugfix, refactor, docs, test
+  impactScore: real("impact_score").default(0.0), // 0-1 scale
+  reviewTime: integer("review_time"), // Estimated review time in minutes
+  educationalValue: real("educational_value").default(0.0), // Learning opportunities
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const repositoriesRelations = relations(repositories, ({ many }) => ({
   pullRequests: many(pullRequests),
@@ -172,6 +211,31 @@ export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
   }),
 }));
 
+export const learningPatternsRelations = relations(learningPatterns, ({ one }) => ({
+  repository: one(repositories, {
+    fields: [learningPatterns.repositoryId],
+    references: [repositories.id],
+  }),
+}));
+
+export const codeContextRelations = relations(codeContext, ({ one }) => ({
+  pullRequest: one(pullRequests, {
+    fields: [codeContext.pullRequestId],
+    references: [pullRequests.id],
+  }),
+  file: one(prFiles, {
+    fields: [codeContext.fileId],
+    references: [prFiles.id],
+  }),
+}));
+
+export const reviewInsightsRelations = relations(reviewInsights, ({ one }) => ({
+  pullRequest: one(pullRequests, {
+    fields: [reviewInsights.pullRequestId],
+    references: [pullRequests.id],
+  }),
+}));
+
 // Insert schemas
 export const insertRepositorySchema = createInsertSchema(repositories).omit({
   id: true,
@@ -205,6 +269,22 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   createdAt: true,
 });
 
+export const insertLearningPatternSchema = createInsertSchema(learningPatterns).omit({
+  id: true,
+  createdAt: true,
+  lastSeen: true,
+});
+
+export const insertCodeContextSchema = createInsertSchema(codeContext).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReviewInsightSchema = createInsertSchema(reviewInsights).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Export types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -220,3 +300,9 @@ export type ReviewComment = typeof reviewComments.$inferSelect;
 export type InsertReviewComment = z.infer<typeof insertReviewCommentSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type LearningPattern = typeof learningPatterns.$inferSelect;
+export type InsertLearningPattern = z.infer<typeof insertLearningPatternSchema>;
+export type CodeContext = typeof codeContext.$inferSelect;
+export type InsertCodeContext = z.infer<typeof insertCodeContextSchema>;
+export type ReviewInsight = typeof reviewInsights.$inferSelect;
+export type InsertReviewInsight = z.infer<typeof insertReviewInsightSchema>;
