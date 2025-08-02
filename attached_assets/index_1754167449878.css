@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+
+  /* GitHub-like dark theme colors */
+  --gh-dark: hsl(215, 28%, 6%);
+  --gh-surface: hsl(217, 26%, 13%);
+  --gh-border: hsl(215, 14%, 19%);
+  --gh-text: hsl(213, 31%, 97%);
+  --gh-text-secondary: hsl(217, 10%, 59%);
+  --rabbit-primary: hsl(262, 83%, 58%); /* purple-500 */
+  --success: hsl(143, 85%, 36%); 
+  --warning: hsl(45, 85%, 47%);
+  --error: hsl(356, 75%, 53%);
+}
+
+.dark {
+  --background: hsl(215, 28%, 6%);
+  --foreground: hsl(213, 31%, 97%);
+  --muted: hsl(217, 26%, 13%);
+  --muted-foreground: hsl(217, 10%, 59%);
+  --popover: hsl(217, 26%, 13%);
+  --popover-foreground: hsl(213, 31%, 97%);
+  --card: hsl(217, 26%, 13%);
+  --card-foreground: hsl(213, 31%, 97%);
+  --border: hsl(215, 14%, 19%);
+  --input: hsl(215, 14%, 19%);
+  --primary: hsl(244, 100%, 67%);
+  --primary-foreground: hsl(213, 31%, 97%);
+  --secondary: hsl(217, 26%, 13%);
+  --secondary-foreground: hsl(213, 31%, 97%);
+  --accent: hsl(217, 26%, 13%);
+  --accent-foreground: hsl(213, 31%, 97%);
+  --destructive: hsl(356, 75%, 53%);
+  --destructive-foreground: hsl(213, 31%, 97%);
+  --ring: hsl(217, 10%, 59%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    background-color: var(--gh-dark);
+    color: var(--gh-text);
+  }
+}
+
+@layer utilities {
+  /* Creative animations */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+  
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(168, 85, 247, 0.4); }
+    50% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.6), 0 0 30px rgba(168, 85, 247, 0.4); }
+  }
+  
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+  
+  .animate-gradient-shift {
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+  }
+
+  .bg-gh-dark {
+    background-color: var(--gh-dark);
+  }
+  
+  .bg-gh-surface {
+    background-color: var(--gh-surface);
+  }
+  
+  .border-gh-border {
+    border-color: var(--gh-border);
+  }
+  
+  .text-gh-text {
+    color: var(--gh-text);
+  }
+  
+  .text-gh-text-secondary {
+    color: var(--gh-text-secondary);
+  }
+  
+  .text-rabbit-primary {
+    color: var(--rabbit-primary);
+  }
+  
+  .bg-rabbit-primary {
+    background-color: var(--rabbit-primary);
+  }
+  
+  .text-success {
+    color: var(--success);
+  }
+  
+  .bg-success {
+    background-color: var(--success);
+  }
+  
+  .text-warning {
+    color: var(--warning);
+  }
+  
+  .bg-warning {
+    background-color: var(--warning);
+  }
+  
+  .text-error {
+    color: var(--error);
+  }
+  
+  .bg-error {
+    background-color: var(--error);
+  }
+  
+  .font-inter {
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Code syntax highlighting */
+.code-diff {
+  font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.diff-addition {
+  background-color: rgba(46, 160, 67, 0.15);
+  border-left: 2px solid var(--success);
+}
+
+.diff-deletion {
+  background-color: rgba(248, 81, 73, 0.15);
+  border-left: 2px solid var(--error);
+}
+
+.line-number {
+  user-select: none;
+  text-align: right;
+  background-color: rgba(110, 118, 129, 0.1);
+  border-right: 1px solid var(--gh-border);
+  color: var(--gh-text-secondary);
+}
