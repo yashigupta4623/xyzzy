@@ -201,6 +201,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update PR review status
       await storage.updatePullRequestStatus(req.params.id, pullRequest.status, analysis.overallRating);
 
+      // Initialize or update merge status for this PR
+      const unresolvedComments = await storage.getUnresolvedComments(req.params.id);
+      const criticalIssues = unresolvedComments.filter(c => c.severity === "critical" || c.severity === "high").length;
+      const canMerge = unresolvedComments.length === 0;
+      
+      const existingStatus = await storage.getPrMergeStatus(req.params.id);
+      if (!existingStatus) {
+        await storage.createPrMergeStatus({
+          pullRequestId: req.params.id,
+          canMerge,
+          blockedReason: canMerge ? null : `${unresolvedComments.length} unresolved comments need to be addressed`,
+          totalComments: comments.length,
+          resolvedComments: 0,
+          criticalIssues,
+        });
+      }
+
       res.json({ 
         ...review, 
         comments,
@@ -315,6 +332,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching learning patterns:", error);
       res.status(500).json({ message: "Failed to fetch learning patterns" });
+    }
+  });
+
+  // Comment resolution routes
+  app.post('/api/comments/:id/resolve', isAuthenticated, async (req: any, res) => {
+    try {
+      const { resolutionNote } = req.body;
+      const userId = req.user.claims.sub;
+      await storage.resolveComment(req.params.id, userId, resolutionNote);
+      res.json({ message: "Comment resolved successfully" });
+    } catch (error) {
+      console.error("Error resolving comment:", error);
+      res.status(500).json({ message: "Failed to resolve comment" });
+    }
+  });
+
+  app.post('/api/comments/:id/dismiss', isAuthenticated, async (req: any, res) => {
+    try {
+      const { resolutionNote } = req.body;
+      const userId = req.user.claims.sub;
+      await storage.dismissComment(req.params.id, userId, resolutionNote);
+      res.json({ message: "Comment dismissed successfully" });
+    } catch (error) {
+      console.error("Error dismissing comment:", error);
+      res.status(500).json({ message: "Failed to dismiss comment" });
+    }
+  });
+
+  app.get('/api/pull-requests/:id/unresolved-comments', async (req, res) => {
+    try {
+      const comments = await storage.getUnresolvedComments(req.params.id);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching unresolved comments:", error);
+      res.status(500).json({ message: "Failed to fetch unresolved comments" });
+    }
+  });
+
+  // Merge status routes
+  app.get('/api/pull-requests/:id/merge-status', async (req, res) => {
+    try {
+      const status = await storage.getPrMergeStatus(req.params.id);
+      res.json(status);
+    } catch (error) {
+      console.error("Error fetching merge status:", error);
+      res.status(500).json({ message: "Failed to fetch merge status" });
+    }
+  });
+
+  app.post('/api/pull-requests/:id/check-merge-eligibility', async (req, res) => {
+    try {
+      const canMerge = await storage.checkMergeEligibility(req.params.id);
+      res.json({ canMerge });
+    } catch (error) {
+      console.error("Error checking merge eligibility:", error);
+      res.status(500).json({ message: "Failed to check merge eligibility" });
     }
   });
 

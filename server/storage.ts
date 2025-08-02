@@ -9,6 +9,7 @@ import {
   learningPatterns,
   codeContext,
   reviewInsights,
+  prMergeStatus,
   type User,
   type UpsertUser,
   type Repository,
@@ -29,9 +30,11 @@ import {
   type InsertCodeContext,
   type ReviewInsight,
   type InsertReviewInsight,
+  type PrMergeStatus,
+  type InsertPrMergeStatus,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -77,6 +80,17 @@ export interface IStorage {
   // Review insights operations
   getReviewInsights(pullRequestId: string): Promise<ReviewInsight[]>;
   createReviewInsight(insight: InsertReviewInsight): Promise<ReviewInsight>;
+  
+  // Comment resolution operations
+  resolveComment(commentId: string, resolvedBy: string, resolutionNote?: string): Promise<void>;
+  dismissComment(commentId: string, resolvedBy: string, resolutionNote?: string): Promise<void>;
+  getUnresolvedComments(pullRequestId: string): Promise<ReviewComment[]>;
+  
+  // Merge status operations
+  getPrMergeStatus(pullRequestId: string): Promise<PrMergeStatus | undefined>;
+  createPrMergeStatus(status: InsertPrMergeStatus): Promise<PrMergeStatus>;
+  updatePrMergeStatus(pullRequestId: string, canMerge: boolean, blockedReason?: string): Promise<void>;
+  checkMergeEligibility(pullRequestId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -237,6 +251,153 @@ export class DatabaseStorage implements IStorage {
   async createReviewInsight(insight: InsertReviewInsight): Promise<ReviewInsight> {
     const [newInsight] = await db.insert(reviewInsights).values(insight).returning();
     return newInsight;
+  }
+
+  // Comment resolution operations
+  async resolveComment(commentId: string, resolvedBy: string, resolutionNote?: string): Promise<void> {
+    await db
+      .update(reviewComments)
+      .set({
+        status: "resolved",
+        resolvedBy,
+        resolvedAt: new Date(),
+        resolutionNote,
+      })
+      .where(eq(reviewComments.id, commentId));
+    
+    // Update merge status for the related PR
+    const comment = await db.select().from(reviewComments).where(eq(reviewComments.id, commentId)).limit(1);
+    if (comment.length > 0) {
+      const review = await db.select().from(aiReviews).where(eq(aiReviews.id, comment[0].aiReviewId)).limit(1);
+      if (review.length > 0) {
+        await this.updateMergeStatusForPr(review[0].pullRequestId);
+      }
+    }
+  }
+
+  async dismissComment(commentId: string, resolvedBy: string, resolutionNote?: string): Promise<void> {
+    await db
+      .update(reviewComments)
+      .set({
+        status: "dismissed",
+        resolvedBy,
+        resolvedAt: new Date(),
+        resolutionNote,
+      })
+      .where(eq(reviewComments.id, commentId));
+    
+    // Update merge status for the related PR
+    const comment = await db.select().from(reviewComments).where(eq(reviewComments.id, commentId)).limit(1);
+    if (comment.length > 0) {
+      const review = await db.select().from(aiReviews).where(eq(aiReviews.id, comment[0].aiReviewId)).limit(1);
+      if (review.length > 0) {
+        await this.updateMergeStatusForPr(review[0].pullRequestId);
+      }
+    }
+  }
+
+  async getUnresolvedComments(pullRequestId: string): Promise<ReviewComment[]> {
+    const reviews = await db.select().from(aiReviews).where(eq(aiReviews.pullRequestId, pullRequestId));
+    const reviewIds = reviews.map(r => r.id);
+    
+    if (reviewIds.length === 0) return [];
+    
+    return await db
+      .select()
+      .from(reviewComments)
+      .where(
+        and(
+          inArray(reviewComments.aiReviewId, reviewIds),
+          eq(reviewComments.status, "open")
+        )
+      );
+  }
+
+  // Merge status operations
+  async getPrMergeStatus(pullRequestId: string): Promise<PrMergeStatus | undefined> {
+    const [status] = await db
+      .select()
+      .from(prMergeStatus)
+      .where(eq(prMergeStatus.pullRequestId, pullRequestId));
+    return status;
+  }
+
+  async createPrMergeStatus(status: InsertPrMergeStatus): Promise<PrMergeStatus> {
+    const [newStatus] = await db
+      .insert(prMergeStatus)
+      .values(status)
+      .returning();
+    return newStatus;
+  }
+
+  async updatePrMergeStatus(pullRequestId: string, canMerge: boolean, blockedReason?: string): Promise<void> {
+    await db
+      .update(prMergeStatus)
+      .set({
+        canMerge,
+        blockedReason,
+        updatedAt: new Date(),
+      })
+      .where(eq(prMergeStatus.pullRequestId, pullRequestId));
+  }
+
+  async checkMergeEligibility(pullRequestId: string): Promise<boolean> {
+    const unresolvedComments = await this.getUnresolvedComments(pullRequestId);
+    const criticalIssues = unresolvedComments.filter(c => c.severity === "critical" || c.severity === "high");
+    
+    return unresolvedComments.length === 0 || criticalIssues.length === 0;
+  }
+
+  private async updateMergeStatusForPr(pullRequestId: string): Promise<void> {
+    const unresolvedComments = await this.getUnresolvedComments(pullRequestId);
+    const totalComments = await this.getTotalComments(pullRequestId);
+    const resolvedComments = totalComments - unresolvedComments.length;
+    const criticalIssues = unresolvedComments.filter(c => c.severity === "critical" || c.severity === "high").length;
+    
+    const canMerge = await this.checkMergeEligibility(pullRequestId);
+    const blockedReason = canMerge ? null : 
+      criticalIssues > 0 ? `${criticalIssues} critical/high severity issues must be resolved` :
+      `${unresolvedComments.length} unresolved comments`;
+
+    // Update or create merge status
+    const existingStatus = await this.getPrMergeStatus(pullRequestId);
+    if (existingStatus) {
+      await db
+        .update(prMergeStatus)
+        .set({
+          canMerge,
+          blockedReason,
+          totalComments,
+          resolvedComments,
+          criticalIssues,
+          lastChecked: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(prMergeStatus.pullRequestId, pullRequestId));
+    } else {
+      await this.createPrMergeStatus({
+        pullRequestId,
+        canMerge,
+        blockedReason,
+        totalComments,
+        resolvedComments,
+        criticalIssues,
+      });
+    }
+  }
+
+  private async getTotalComments(pullRequestId: string): Promise<number> {
+    const reviews = await db.select().from(aiReviews).where(eq(aiReviews.pullRequestId, pullRequestId));
+    const reviewIds = reviews.map(r => r.id);
+    
+    if (reviewIds.length === 0) return 0;
+    
+    const comments = await db
+      .select()
+      .from(reviewComments)
+      .where(inArray(reviewComments.aiReviewId, reviewIds));
+    
+    return comments.length;
   }
 }
 

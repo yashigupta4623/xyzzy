@@ -106,7 +106,24 @@ export const reviewComments = pgTable("review_comments", {
   severity: varchar("severity").default("low"), // low, medium, high, critical
   message: text("message").notNull(),
   suggestion: text("suggestion"),
+  status: varchar("status").default("open"), // open, resolved, dismissed
+  resolvedBy: varchar("resolved_by"), // user id who resolved
+  resolvedAt: timestamp("resolved_at"),
+  resolutionNote: text("resolution_note"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// PR merge status table
+export const prMergeStatus = pgTable("pr_merge_status", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pullRequestId: varchar("pull_request_id").notNull().unique(),
+  canMerge: boolean("can_merge").default(false),
+  blockedReason: text("blocked_reason"),
+  totalComments: integer("total_comments").default(0),
+  resolvedComments: integer("resolved_comments").default(0),
+  criticalIssues: integer("critical_issues").default(0),
+  lastChecked: timestamp("last_checked").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Chat messages table
@@ -236,6 +253,13 @@ export const reviewInsightsRelations = relations(reviewInsights, ({ one }) => ({
   }),
 }));
 
+export const prMergeStatusRelations = relations(prMergeStatus, ({ one }) => ({
+  pullRequest: one(pullRequests, {
+    fields: [prMergeStatus.pullRequestId],
+    references: [pullRequests.id],
+  }),
+}));
+
 // Insert schemas
 export const insertRepositorySchema = createInsertSchema(repositories).omit({
   id: true,
@@ -285,6 +309,12 @@ export const insertReviewInsightSchema = createInsertSchema(reviewInsights).omit
   createdAt: true,
 });
 
+export const insertPrMergeStatusSchema = createInsertSchema(prMergeStatus).omit({
+  id: true,
+  lastChecked: true,
+  updatedAt: true,
+});
+
 // Export types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -306,3 +336,5 @@ export type CodeContext = typeof codeContext.$inferSelect;
 export type InsertCodeContext = z.infer<typeof insertCodeContextSchema>;
 export type ReviewInsight = typeof reviewInsights.$inferSelect;
 export type InsertReviewInsight = z.infer<typeof insertReviewInsightSchema>;
+export type PrMergeStatus = typeof prMergeStatus.$inferSelect;
+export type InsertPrMergeStatus = z.infer<typeof insertPrMergeStatusSchema>;

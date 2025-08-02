@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
 import AiReviewPanel from "@/components/ai-review-panel";
+import CommentResolutionPanel from "@/components/comment-resolution-panel";
+import MergeButton from "@/components/merge-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,14 +23,30 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
+interface PullRequest {
+  id: string;
+  number: number;
+  title: string;
+  description?: string;
+  author: string;
+  createdAt: string;
+  headBranch: string;
+  baseBranch: string;
+  additions: number;
+  deletions: number;
+  changedFiles: number;
+  reviewStatus?: string;
+  status: string;
+}
+
 export default function PullRequestDetail() {
   const { id } = useParams<{ id: string }>();
   
-  const { data: pullRequest, isLoading } = useQuery({
+  const { data: pullRequest, isLoading } = useQuery<PullRequest>({
     queryKey: ['/api/pull-requests', id],
   });
 
-  const { data: files } = useQuery({
+  const { data: files } = useQuery<any[]>({
     queryKey: ['/api/pull-requests', id, 'files'],
   });
 
@@ -147,14 +165,9 @@ export default function PullRequestDetail() {
                   
                   <div className="flex items-center space-x-2">
                     <Button 
-                      className={cn(
-                        "text-sm",
-                        pullRequest.reviewStatus === "approved" 
-                          ? "bg-success hover:bg-green-700 text-white"
-                          : "bg-rabbit-primary hover:bg-indigo-600 text-white"
-                      )}
+                      className="bg-purple-600 hover:bg-purple-700 text-white text-sm"
                     >
-                      {pullRequest.reviewStatus === "approved" ? "Merge" : "Review"}
+                      Review Changes
                     </Button>
                   </div>
                 </div>
@@ -169,6 +182,15 @@ export default function PullRequestDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Merge Button */}
+            <MergeButton 
+              pullRequestId={pullRequest.id}
+              pullRequestTitle={pullRequest.title}
+            />
+
+            {/* Comment Resolution Panel */}
+            <CommentResolutionPanel pullRequestId={pullRequest.id} />
 
             {/* Files Changed */}
             <Card className="bg-gh-surface border-gh-border">

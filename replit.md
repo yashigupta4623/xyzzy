@@ -8,6 +8,18 @@ A comprehensive AI-powered code review platform modeled after CodeRabbit, provid
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (January 2025)
+
+### PR Reviewer with Merge Blocking Implementation
+- ✅ Enhanced database schema with comment resolution tracking and merge status control
+- ✅ Added comprehensive comment resolution system with humanized verification
+- ✅ Implemented merge blocking until all comments are properly resolved
+- ✅ Created comment resolution panel with resolve/dismiss functionality
+- ✅ Added merge button component with real-time status checking
+- ✅ Integrated automatic merge status updates when comments are resolved
+- ✅ Reverted UI branding back to original BugOtter while maintaining CodeRabbit-style backend functionality
+- ✅ Added API routes for comment resolution and merge eligibility checking
+
 ## System Architecture
 
 ### Frontend Architecture

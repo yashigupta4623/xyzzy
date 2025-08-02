@@ -25,7 +25,7 @@ export default function Landing() {
               <Bot className="text-white text-lg relative z-10" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-semibold text-gh-text tracking-tight">CodeRabbit Clone</span>
+              <span className="text-xl font-semibold text-gh-text tracking-tight">BugOtter</span>
               <span className="text-xs text-purple-400 font-medium tracking-wider">AI REVIEW</span>
             </div>
           </div>
@@ -51,13 +51,13 @@ export default function Landing() {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-            Advanced AI Code Review
+            AI-Powered Code Review
           </h1>
           
           <p className="text-xl text-gh-text-secondary mb-8 max-w-3xl mx-auto leading-relaxed">
-            Experience CodeRabbit-level intelligence with deep contextual understanding. 
-            Get senior developer insights, educational feedback, and adaptive learning 
-            that grows with your team's coding patterns.
+            Transform your development workflow with intelligent code analysis. 
+            BugOtter provides comprehensive security audits, performance insights, 
+            and quality assessments for every pull request.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -86,10 +86,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 text-gh-text">
-              CodeRabbit-Style Intelligence
+              Intelligent Code Review Features
             </h2>
             <p className="text-xl text-gh-text-secondary max-w-2xl mx-auto">
-              Advanced contextual understanding with senior developer-level insights and adaptive learning
+              Leverage cutting-edge AI to catch issues before they reach production
             </p>
           </div>
           
