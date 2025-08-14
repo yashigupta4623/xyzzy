@@ -1,0 +1,540 @@
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugOtter - AI-Powered Code Review Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'gh-dark': '#0d1117',
+                        'gh-surface': '#21262d',
+                        'gh-border': '#30363d',
+                        'gh-text': '#e6edf3',
+                        'gh-text-secondary': '#7d8590',
+                        'rabbit-primary': '#a855f7',
+                        'success': '#238636',
+                        'warning': '#d29922',
+                        'error': '#da3633'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite',
+                        'gradient-shift': 'gradient-shift 3s ease infinite'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-6px)' }
+                        },
+                        glow: {
+                            '0%, 100%': { boxShadow: '0 0 5px rgba(168, 85, 247, 0.4)' },
+                            '50%': { boxShadow: '0 0 20px rgba(168, 85, 247, 0.6), 0 0 30px rgba(168, 85, 247, 0.4)' }
+                        },
+                        'gradient-shift': {
+                            '0%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' },
+                            '100%': { backgroundPosition: '0% 50%' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .animate-gradient-shift {
+            background-size: 200% 200%;
+        }
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .code-diff {
+            font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', Courier, monospace;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+        .diff-addition {
+            background-color: rgba(46, 160, 67, 0.15);
+            border-left: 2px solid #238636;
+        }
+        .diff-deletion {
+            background-color: rgba(248, 81, 73, 0.15);
+            border-left: 2px solid #da3633;
+        }
+    </style>
+</head>
+<body class="bg-gh-dark text-gh-text font-inter min-h-screen">
+    <!-- Header -->
+    <header class="bg-gh-surface border-b border-gh-border px-6 py-4 sticky top-0 z-50">
+        <div class="flex items-center justify-between max-w-7xl mx-auto">
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <div class="relative w-8 h-8 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 rounded-xl flex items-center justify-center shadow-lg overflow-hidden animate-float animate-glow">
+                        <!-- Animated background effect -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/30 via-purple-500/30 to-pink-500/30 animate-gradient-shift"></div>
+                        <!-- Creative BugOtter logo -->
+                        <i class="fas fa-otter text-white text-lg relative z-10"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-semibold text-gh-text tracking-tight">BugOtter</span>
+                        <span class="text-xs text-purple-400 font-medium tracking-wider">AI REVIEW</span>
+                    </div>
+                </div>
+                <nav class="hidden md:flex items-center space-x-6 ml-8">
+                    <a href="#" class="text-gh-text hover:text-purple-400 transition-all duration-200 font-medium hover:scale-105">Dashboard</a>
+                    <a href="#" class="text-gh-text-secondary hover:text-purple-400 transition-all duration-200 font-medium hover:scale-105">Repositories</a>
+                    <a href="#" class="text-gh-text-secondary hover:text-purple-400 transition-all duration-200 font-medium hover:scale-105">Reviews</a>
+                    <a href="#" class="text-gh-text-secondary hover:text-purple-400 transition-all duration-200 font-medium hover:scale-105">Analytics</a>
+                </nav>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" placeholder="Search repositories..." class="bg-gh-dark border border-gh-border w-64 px-4 py-2 rounded-lg text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 pr-10 transition-all duration-200">
+                    <i class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gh-text-secondary"></i>
+                </div>
+                
+                <button class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 px-4 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-purple-500/25 font-medium">
+                    <i class="fas fa-plus mr-2"></i>
+                    Connect Repository
+                </button>
+                
+                <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center border border-purple-500/30">
+                    <i class="fas fa-user text-white text-sm"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gh-surface border-r border-gh-border p-6 min-h-screen">
+            <div class="space-y-6">
+                <!-- Repository Selector -->
+                <div>
+                    <h3 class="text-sm font-medium text-gh-text mb-3">Active Repository</h3>
+                    <div class="bg-gh-dark border border-gh-border rounded-lg p-3">
+                        <div class="flex items-center space-x-2">
+                            <i class="fab fa-github text-gh-text-secondary"></i>
+                            <div>
+                                <p class="text-sm font-medium text-gh-text">acme-corp/web-app</p>
+                                <p class="text-xs text-gh-text-secondary">5 open PRs</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="space-y-2">
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-600/20 to-indigo-600/20 text-purple-300 border-l-2 border-purple-400 shadow-lg">
+                        <i class="fas fa-code-branch"></i>
+                        <span class="text-sm font-medium">Pull Requests</span>
+                        <span class="ml-auto bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs px-2 py-1 rounded shadow-md">5</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-gh-text-secondary hover:bg-gh-border/50 hover:text-gh-text transition-colors">
+                        <i class="fas fa-history"></i>
+                        <span class="text-sm font-medium">Review History</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-gh-text-secondary hover:bg-gh-border/50 hover:text-gh-text transition-colors">
+                        <i class="fas fa-chart-bar"></i>
+                        <span class="text-sm font-medium">Analytics</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-gh-text-secondary hover:bg-gh-border/50 hover:text-gh-text transition-colors">
+                        <i class="fas fa-cog"></i>
+                        <span class="text-sm font-medium">Settings</span>
+                    </a>
+                </nav>
+
+                <!-- Recent Activity -->
+                <div>
+                    <h3 class="text-sm font-medium text-gh-text mb-3">Recent Reviews</h3>
+                    <div class="space-y-2">
+                        <div class="p-2 bg-gh-dark rounded border border-gh-border">
+                            <p class="text-xs font-medium text-gh-text">#245 User authentication</p>
+                            <p class="text-xs text-success">✓ Approved</p>
+                        </div>
+                        <div class="p-2 bg-gh-dark rounded border border-gh-border">
+                            <p class="text-xs font-medium text-gh-text">#244 Fix memory leak</p>
+                            <p class="text-xs text-warning">⏳ In Review</p>
+                        </div>
+                        <div class="p-2 bg-gh-dark rounded border border-gh-border">
+                            <p class="text-xs font-medium text-gh-text">#243 Add API tests</p>
+                            <p class="text-xs text-error">⚠ Changes Requested</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex">
+            <!-- Pull Requests List -->
+            <div class="flex-1 p-6">
+                <div class="bg-gh-surface border border-gh-border rounded-lg">
+                    <div class="p-6 border-b border-gh-border">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold text-gh-text">Pull Requests</h2>
+                            <div class="flex items-center space-x-2">
+                                <select class="bg-gh-dark border border-gh-border rounded px-3 py-1 text-sm text-gh-text">
+                                    <option>All Status</option>
+                                    <option>Open</option>
+                                    <option>Reviewed</option>
+                                    <option>Merged</option>
+                                </select>
+                                <button class="text-gh-text-secondary hover:text-gh-text">
+                                    <i class="fas fa-filter"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="divide-y divide-gh-border">
+                        <!-- PR Item 1 -->
+                        <div class="p-6 hover:bg-gh-border/20 transition-colors cursor-pointer">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <span class="bg-success text-white text-xs px-2 py-1 rounded font-medium">#246</span>
+                                        <h3 class="font-medium text-gh-text">Add OAuth authentication for GitHub integration</h3>
+                                        <span class="bg-warning text-white text-xs px-2 py-1 rounded flex items-center">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            In Review
+                                        </span>
+                                    </div>
+                                    
+                                    <p class="text-sm text-gh-text-secondary mb-3 line-clamp-2">
+                                        Implements OAuth 2.0 flow for GitHub authentication, adds secure token storage, and includes comprehensive error handling for auth failures.
+                                    </p>
+                                    
+                                    <div class="flex items-center space-x-4 text-xs text-gh-text-secondary">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-user mr-1"></i>
+                                            sarah-dev
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            2 hours ago
+                                        </span>
+                                        <span class="flex items-center text-success">
+                                            <i class="fas fa-plus mr-1"></i>
+                                            +127
+                                        </span>
+                                        <span class="flex items-center text-error">
+                                            <i class="fas fa-minus mr-1"></i>
+                                            -23
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-comment mr-1"></i>
+                                            5 comments
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <div class="w-6 h-6 bg-rabbit-primary rounded-full flex items-center justify-center">
+                                        <i class="fas fa-robot text-white text-xs"></i>
+                                    </div>
+                                    <button class="bg-rabbit-primary hover:bg-indigo-600 text-white px-3 py-1 rounded text-xs transition-colors">
+                                        View Review
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PR Item 2 -->
+                        <div class="p-6 hover:bg-gh-border/20 transition-colors cursor-pointer">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <span class="bg-success text-white text-xs px-2 py-1 rounded font-medium">#245</span>
+                                        <h3 class="font-medium text-gh-text">Optimize database queries for user dashboard</h3>
+                                        <span class="bg-success text-white text-xs px-2 py-1 rounded flex items-center">
+                                            <i class="fas fa-check-circle mr-1"></i>
+                                            Approved
+                                        </span>
+                                    </div>
+                                    
+                                    <p class="text-sm text-gh-text-secondary mb-3 line-clamp-2">
+                                        Reduces query execution time by 60% through better indexing and query optimization. Includes performance benchmarks and tests.
+                                    </p>
+                                    
+                                    <div class="flex items-center space-x-4 text-xs text-gh-text-secondary">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-user mr-1"></i>
+                                            mike-backend
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            1 day ago
+                                        </span>
+                                        <span class="flex items-center text-success">
+                                            <i class="fas fa-plus mr-1"></i>
+                                            +89
+                                        </span>
+                                        <span class="flex items-center text-error">
+                                            <i class="fas fa-minus mr-1"></i>
+                                            -45
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-comment mr-1"></i>
+                                            3 comments
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <div class="w-6 h-6 bg-success rounded-full flex items-center justify-center">
+                                        <i class="fas fa-check text-white text-xs"></i>
+                                    </div>
+                                    <button class="bg-success hover:bg-green-700 text-white px-3 py-1 rounded text-xs transition-colors">
+                                        Merge
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PR Item 3 -->
+                        <div class="p-6 hover:bg-gh-border/20 transition-colors cursor-pointer">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <span class="bg-success text-white text-xs px-2 py-1 rounded font-medium">#244</span>
+                                        <h3 class="font-medium text-gh-text">Fix memory leak in real-time chat component</h3>
+                                        <span class="bg-error text-white text-xs px-2 py-1 rounded flex items-center">
+                                            <i class="fas fa-times-circle mr-1"></i>
+                                            Changes Requested
+                                        </span>
+                                    </div>
+                                    
+                                    <p class="text-sm text-gh-text-secondary mb-3 line-clamp-2">
+                                        Addresses WebSocket connection leaks and improves cleanup of event listeners. Needs additional test coverage for edge cases.
+                                    </p>
+                                    
+                                    <div class="flex items-center space-x-4 text-xs text-gh-text-secondary">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-user mr-1"></i>
+                                            alex-frontend
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            3 days ago
+                                        </span>
+                                        <span class="flex items-center text-success">
+                                            <i class="fas fa-plus mr-1"></i>
+                                            +42
+                                        </span>
+                                        <span class="flex items-center text-error">
+                                            <i class="fas fa-minus mr-1"></i>
+                                            -18
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-comment mr-1"></i>
+                                            7 comments
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <div class="w-6 h-6 bg-error rounded-full flex items-center justify-center">
+                                        <i class="fas fa-exclamation text-white text-xs"></i>
+                                    </div>
+                                    <button class="bg-gh-border text-gh-text hover:bg-gh-border/70 px-3 py-1 rounded text-xs transition-colors">
+                                        Address Issues
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Review Panel -->
+            <aside class="w-96 bg-gh-surface border-l border-gh-border flex flex-col">
+                <!-- Header -->
+                <div class="p-6 border-b border-gh-border">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-gh-text">PR #246 Review</h3>
+                        <button class="text-gh-text-secondary hover:text-gh-text">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-8 h-8 bg-rabbit-primary rounded-full flex items-center justify-center">
+                            <i class="fas fa-robot text-white"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gh-text">BugOtter AI</p>
+                            <p class="text-xs text-gh-text-secondary">Review complete</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Summary -->
+                <div class="p-6 border-b border-gh-border">
+                    <h4 class="font-medium text-gh-text mb-3 flex items-center">
+                        <i class="fas fa-brain text-rabbit-primary mr-2"></i>
+                        AI Review Summary
+                    </h4>
+                    
+                    <div class="bg-gh-dark border border-gh-border rounded-lg p-4">
+                        <p class="text-sm text-gh-text mb-2">
+                            <strong>Overall Assessment:</strong> Well-implemented OAuth flow with good security practices. Minor issues with error handling need attention.
+                        </p>
+                        
+                        <div class="space-y-2 text-xs">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-check-circle text-success"></i>
+                                <span class="text-gh-text-secondary">Code Quality Score: 85/100</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-check-circle text-success"></i>
+                                <span class="text-gh-text-secondary">Test Coverage: 92%</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                                <span class="text-gh-text-secondary">2 security considerations found</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Comments -->
+                <div class="flex-1 overflow-y-auto">
+                    <div class="p-6">
+                        <h4 class="font-medium text-gh-text mb-3 flex items-center">
+                            <i class="fas fa-comments text-rabbit-primary mr-2"></i>
+                            AI Comments
+                        </h4>
+                        
+                        <div class="space-y-4">
+                            <!-- Comment 1 -->
+                            <div class="bg-gh-dark border border-warning rounded-lg p-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-rabbit-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-robot text-white text-xs"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                                            <span class="text-xs border border-gh-border px-2 py-1 rounded text-gh-text">Security</span>
+                                            <span class="text-xs text-gh-text-secondary">Line 45</span>
+                                        </div>
+                                        
+                                        <p class="text-sm text-gh-text mb-2">Consider adding rate limiting to the OAuth callback endpoint to prevent abuse.</p>
+                                        
+                                        <div class="bg-gh-surface border border-gh-border rounded p-2 mt-2">
+                                            <p class="text-xs font-medium text-gh-text mb-1">Suggestion:</p>
+                                            <p class="text-xs text-gh-text-secondary">Implement express-rate-limit middleware with appropriate windows and limits.</p>
+                                        </div>
+                                        
+                                        <div class="flex items-center space-x-2 mt-2">
+                                            <button class="text-xs text-rabbit-primary hover:underline">Reply</button>
+                                            <button class="text-xs text-gh-text-secondary hover:text-gh-text">👍 2</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Comment 2 -->
+                            <div class="bg-gh-dark border border-rabbit-primary rounded-lg p-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-6 h-6 bg-rabbit-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-robot text-white text-xs"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <i class="fas fa-lightbulb text-rabbit-primary"></i>
+                                            <span class="text-xs border border-gh-border px-2 py-1 rounded text-gh-text">Enhancement</span>
+                                            <span class="text-xs text-gh-text-secondary">Line 78</span>
+                                        </div>
+                                        
+                                        <p class="text-sm text-gh-text mb-2">The error handling looks good, but consider adding more specific error messages for different OAuth failure scenarios.</p>
+                                        
+                                        <div class="flex items-center space-x-2 mt-2">
+                                            <button class="text-xs text-rabbit-primary hover:underline">Reply</button>
+                                            <button class="text-xs text-gh-text-secondary hover:text-gh-text">👍 1</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Section -->
+                <div class="border-t border-gh-border">
+                    <div class="p-6">
+                        <h4 class="font-medium text-gh-text mb-3 flex items-center">
+                            <i class="fas fa-comment-dots text-rabbit-primary mr-2"></i>
+                            Chat with AI
+                        </h4>
+                        
+                        <div class="bg-gh-dark border border-gh-border rounded-lg p-4 mb-4 h-32 overflow-y-auto">
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-start space-x-2">
+                                    <div class="w-5 h-5 bg-rabbit-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-robot text-white text-xs"></i>
+                                    </div>
+                                    <div class="bg-rabbit-primary/10 rounded-lg p-2 max-w-xs">
+                                        <p class="text-gh-text">Hello! I'm here to help you with this pull request. Feel free to ask me any questions about the code changes or security concerns.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <input type="text" placeholder="Ask BugOtter anything..." class="flex-1 bg-gh-dark border border-gh-border rounded px-3 py-2 text-sm focus:border-rabbit-primary focus:ring-2 focus:ring-rabbit-primary/20">
+                            <button class="bg-rabbit-primary hover:bg-indigo-600 text-white px-3 py-2 rounded transition-colors">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script>
+        // TODO: Implement interactive functionality
+        // - Repository connection modal
+        // - Real-time chat with AI
+        // - Pull request navigation
+        // - Code diff viewer
+        // - Review status updates
+        
+        // Simulate loading states and interactions
+        (() => {
+            // Add hover effects and interactions
+            document.addEventListener('DOMContentLoaded', function() {
+                // Animate floating logo
+                const logo = document.querySelector('.animate-float');
+                if (logo) {
+                    setInterval(() => {
+                        logo.style.transform = `translateY(${Math.sin(Date.now() / 1000) * 3}px)`;
+                    }, 50);
+                }
+                
+                // Add click handlers for demo purposes
+                document.querySelectorAll('[data-mock="true"]').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        console.log('Demo interaction:', el.textContent);
+                    });
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
